@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .vscode/
+.claude/
 *.log
 gh-pages/
 gh-pages-local/

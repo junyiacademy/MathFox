@@ -85,6 +85,7 @@ module.exports = {
         ]
       },
       */
+      /*
       {
         test: /.*\.(gif|png|jpe?g)$/i,
         use: [
@@ -96,6 +97,7 @@ module.exports = {
           }
         ]
       },
+      */
       {
         test: /\.css$/,
         use: ExtractTextPlugin.extract({

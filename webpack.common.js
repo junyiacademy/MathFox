@@ -48,7 +48,7 @@ module.exports = {
           {
             loader: 'file-loader',
             options: {
-              name: '/images/[path][name]_[hash:7].[ext]',
+              name: 'images/[path][name]_[hash:7].[ext]',
             }
           }
         ]
@@ -59,7 +59,7 @@ module.exports = {
           {
             loader: 'file-loader',
             options: {
-              name: '/audio/[name].[ext]',
+              name: 'audio/[name].[ext]',
             }
           }
         ]

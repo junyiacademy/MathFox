@@ -10,7 +10,7 @@ module.exports = merge(common, {
     output: {
         pathinfo: true,
         path: path.resolve(__dirname, 'dist'),
-        publicPath: '/MathFox/',
+        publicPath: '/',
         filename: '[hash].bundle.js'
     },
     plugins: [
@@ -35,4 +35,3 @@ module.exports = merge(common, {
         })
     ]
 });
-

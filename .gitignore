@@ -3,3 +3,4 @@ dist/
 .vscode/
 *.log
 gh-pages/
+gh-pages-local/

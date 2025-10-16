@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deploy to gh-pages script
-# Usage: ./deploy-gh-pages.sh [build|deploy]
+# Usage: ./deploy-gh-pages.sh [build|build-local|deploy]
 
 set -e
 
@@ -9,41 +9,58 @@ COMMAND=$1
 
 # Function to show usage
 usage() {
-  echo "Usage: ./deploy-gh-pages.sh [build|deploy]"
+  echo "Usage: ./deploy-gh-pages.sh [build|build-local|deploy]"
   echo ""
   echo "Commands:"
-  echo "  build   - Build production bundle to gh-pages folder"
-  echo "  deploy  - Build and push to gh-pages branch on GitHub"
+  echo "  build       - Build for GitHub Pages (publicPath: /MathFox/)"
+  echo "  build-local - Build for local testing (publicPath: /)"
+  echo "  deploy      - Build and push to gh-pages branch on GitHub"
   echo ""
   exit 1
 }
 
-# Function to build
+# Function to build for GitHub Pages
 build() {
-  echo "Starting build process..."
+  echo "Starting build process for GitHub Pages..."
 
-  # 1. Build the project
-  echo "Building production bundle..."
-  npm run build
+  # Clean dist folder manually
+  echo "Cleaning dist folder..."
+  rm -rf dist
 
-  # 2. Check if dist folder exists
+  # Build with gh-pages config
+  echo "Building production bundle with publicPath=/MathFox/..."
+  npx webpack --config webpack.ghpages.js
+
+  # Check if dist folder exists
   if [ ! -d "dist" ]; then
     echo "Error: dist folder not found. Build failed?"
     exit 1
   fi
 
-  # 3. Create gh-pages folder
+  # Create gh-pages folder
   echo "Creating gh-pages folder..."
   rm -rf gh-pages
   mkdir -p gh-pages
 
-  # 4. Copy dist contents to gh-pages folder
+  # Copy dist contents to gh-pages folder
   echo "Copying dist files to gh-pages folder..."
   cp -r dist/* gh-pages/
 
-  # 5. Create index.html in gh-pages folder
+  # Find bundle filenames
+  VENDOR_BUNDLE=$(ls gh-pages/*.vendor.bundle.js | xargs basename)
+  APP_BUNDLE=$(ls gh-pages/*.bundle.js | grep -v vendor | xargs basename)
+
+  echo "Found bundles:"
+  echo "  Vendor: $VENDOR_BUNDLE"
+  echo "  App: $APP_BUNDLE"
+
+  # Copy mock globals script
+  echo "Copying mock-globals.js..."
+  cp mock-globals-ghpages.js gh-pages/mock-globals.js
+
+  # Create index.html in gh-pages folder
   echo "Creating index.html..."
-  cat > gh-pages/index.html << 'EOF'
+  cat > gh-pages/index.html << EOF
 <!DOCTYPE html>
 <html>
 <head>
@@ -51,35 +68,106 @@ build() {
     <title>MathFox Game</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="mock-globals.js"></script>
 </head>
 <body>
-    <script src="9a02e55a2dec53bc8194.vendor.bundle.js"></script>
-    <script src="9a02e55a2dec53bc8194.bundle.js"></script>
+    <script src="$VENDOR_BUNDLE"></script>
+    <script src="$APP_BUNDLE"></script>
 </body>
 </html>
 EOF
 
   echo ""
-  echo "✓ Build completed successfully!"
+  echo "✓ Build completed successfully for GitHub Pages!"
   echo "  Output: gh-pages/"
+  echo ""
+  echo "To test locally, use: ./deploy-gh-pages.sh build-local"
+  echo ""
+}
+
+# Function to build for local testing
+build_local() {
+  echo "Starting build process for local testing..."
+
+  # Clean dist folder manually
+  echo "Cleaning dist folder..."
+  rm -rf dist
+
+  # Build with local config
+  echo "Building production bundle with publicPath=/..."
+  npx webpack --config webpack.local.js
+
+  # Check if dist folder exists
+  if [ ! -d "dist" ]; then
+    echo "Error: dist folder not found. Build failed?"
+    exit 1
+  fi
+
+  # Create gh-pages-local folder
+  echo "Creating gh-pages-local folder..."
+  rm -rf gh-pages-local
+  mkdir -p gh-pages-local
+
+  # Copy dist contents
+  echo "Copying dist files..."
+  cp -r dist/* gh-pages-local/
+
+  # Find bundle filenames
+  VENDOR_BUNDLE=$(ls gh-pages-local/*.vendor.bundle.js | xargs basename)
+  APP_BUNDLE=$(ls gh-pages-local/*.bundle.js | grep -v vendor | xargs basename)
+
+  echo "Found bundles:"
+  echo "  Vendor: $VENDOR_BUNDLE"
+  echo "  App: $APP_BUNDLE"
+
+  # Copy mock globals with local path
+  echo "Copying mock-globals.js..."
+  cp mock-globals-local.js gh-pages-local/mock-globals.js
+
+  # Create index.html
+  echo "Creating index.html..."
+  cat > gh-pages-local/index.html << EOF
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MathFox Game (Local Test)</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="mock-globals.js"></script>
+</head>
+<body>
+    <script src="$VENDOR_BUNDLE"></script>
+    <script src="$APP_BUNDLE"></script>
+</body>
+</html>
+EOF
+
+  echo ""
+  echo "✓ Build completed successfully for local testing!"
+  echo "  Output: gh-pages-local/"
+  echo ""
+  echo "To test, run:"
+  echo "  cd gh-pages-local && python3 -m http.server 8080"
+  echo "  Then open: http://localhost:8080"
   echo ""
 }
 
 # Function to deploy
 deploy() {
-  # First, build
+  # First, build for GitHub Pages
   build
 
   echo "Starting deployment process..."
 
-  # 6. Initialize git in gh-pages folder
+  # Initialize git in gh-pages folder
   echo "Initializing git repository in gh-pages folder..."
   cd gh-pages
   git init
   git add -A
   git commit -m "deploy: update gh-pages $(date '+%Y-%m-%d %H:%M:%S')"
 
-  # 7. Push to gh-pages branch
+  # Push to gh-pages branch
   echo "Pushing to gh-pages branch..."
   git push -f ../. HEAD:gh-pages
 
@@ -101,6 +189,9 @@ deploy() {
 case "$COMMAND" in
   build)
     build
+    ;;
+  build-local)
+    build_local
     ;;
   deploy)
     deploy

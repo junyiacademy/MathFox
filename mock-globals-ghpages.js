@@ -28,23 +28,3 @@ getPassedStageIDListFunc.default = getPassedStageIDListFunc;
 window.getPassedStageIDList = getPassedStageIDListFunc;
 
 window.path_prefix = '/MathFox';
-
-// Mock jQuery AJAX for API calls
-(function() {
-  var originalAjax = jQuery.ajax;
-  jQuery.ajax = function(settings) {
-    // Intercept stage_complete API call
-    if (settings.url && settings.url.indexOf('/api/v1/game/stage_complete') !== -1) {
-      console.log('Mocked API call to:', settings.url, 'with data:', settings.data);
-      // Simulate successful response
-      setTimeout(function() {
-        if (settings.success) {
-          settings.success({ success: true, message: 'Stage completed (mocked)' });
-        }
-      }, 500);
-      return;
-    }
-    // Pass through other AJAX calls
-    return originalAjax.call(jQuery, settings);
-  };
-})();

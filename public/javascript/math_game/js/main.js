@@ -18,6 +18,7 @@ import FishingPage from './FishingPage/FishingPage';
 import CookingPage from './CookingPage/CookingPage';
 import getPassedStageIDList from 'getPassedStageIDList';
 import { Ax } from './User/tool';
+import { getCompletedStages } from './User/ProgressStorage';
 import '../main.css';
 class Game extends Phaser.Game {
   constructor(StageList) {
@@ -57,5 +58,18 @@ const initGameProcess = List => {
     Ax.SharpenBar1 = 100;
   }
 }
-const StageList = getPassedStageIDList();
+// Try to load progress from localStorage first, fallback to getPassedStageIDList
+let StageList = getCompletedStages();
+
+// If localStorage is empty, try the external function (for backward compatibility)
+if (StageList.length === 0) {
+  const externalStages = getPassedStageIDList();
+  if (externalStages && externalStages.length > 0) {
+    StageList = externalStages;
+    console.log('Loaded stages from getPassedStageIDList:', StageList);
+  }
+} else {
+  console.log('Loaded stages from localStorage:', StageList);
+}
+
 window.game = new Game(StageList);

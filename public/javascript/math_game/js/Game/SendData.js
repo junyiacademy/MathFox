@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
-import $ from 'jquery';
 import { setBtnEnable, delay } from '../Game/utils'
 import { config } from '../GameConfig';
-import globalUser from 'globalUser';
 import SendData from './images/SendData';
+import { saveCompletedStage } from '../User/ProgressStorage';
 
 export default class extends Phaser.State {
   init(stage) {
@@ -67,17 +66,27 @@ export default class extends Phaser.State {
 const tweenScale = (game, obj, scale) => game.add.tween(obj.scale).to({ x: scale, y: scale }, 300, 'Quad.easeOut', true, 0);
 
 const SendStageState = (stageList, callback1, callback2, callback3) => {
-  if (globalUser.email.length === 0 && globalUser.nickname.length === 0) {
-    return callback3();
-  } else {
-    $.ajax({
-      type: 'POST',
-      url: '/api/v1/game/stage_complete',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify({ game_id: 'mathfox', new_stage: stageList[stageList.length - 1] }),
-      success: callback1,
-      error: callback2
-    });
+  // Save completed stage to localStorage
+  const latestStage = stageList[stageList.length - 1];
+
+  try {
+    const success = saveCompletedStage(latestStage);
+
+    if (success) {
+      // Simulate async behavior like the original API
+      setTimeout(() => {
+        callback1({ success: true, message: 'Progress saved to localStorage' });
+      }, 300);
+    } else {
+      setTimeout(() => {
+        callback2(null, 'error', 'Failed to save progress');
+      }, 300);
+    }
+  } catch (error) {
+    console.error('Error saving progress:', error);
+    setTimeout(() => {
+      callback2(null, 'error', error.message);
+    }, 300);
   }
 }
 
